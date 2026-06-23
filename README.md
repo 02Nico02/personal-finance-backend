@@ -1,6 +1,28 @@
 # Personal Finance Backend
 
-Base técnica del backend de finanzas personales.
+Backend personal para finanzas, inversiones e importacion de datos desde Excel.
+
+Esta pensado como base para un futuro frontend Angular, con persistencia en PostgreSQL y una API NestJS como nucleo del sistema.
+
+## Estado actual
+
+El proyecto esta en etapa inicial y por ahora solo incluye:
+
+- setup NestJS
+- Docker Compose
+- PostgreSQL
+- Prisma
+- Healthcheck
+
+## Objetivo del backend
+
+Este backend sera la base para:
+
+- finanzas personales
+- inversiones
+- importacion inicial desde Excel
+- persistencia en PostgreSQL
+- API para un futuro frontend Angular
 
 ## Stack
 
@@ -9,19 +31,7 @@ Base técnica del backend de finanzas personales.
 - Prisma
 - Docker Compose
 - Jest
-- `@nestjs/config`
 - Zod
-
-## Requisitos
-
-- Docker
-- Docker Compose
-
-No hace falta instalar PostgreSQL, Prisma CLI ni NestJS CLI globalmente.
-
-## Variables de entorno
-
-Existe un archivo `.env.example` con las variables esperadas.
 
 ## Levantar el entorno
 
@@ -29,32 +39,11 @@ Existe un archivo `.env.example` con las variables esperadas.
 docker compose up --build
 ```
 
-API:
-
-- `http://localhost:3000`
-
-PostgreSQL:
-
-- `localhost:5435`
-
 ## Prisma
-
-Generar Prisma Client:
-
-```bash
-docker compose exec api npx prisma generate
-```
-
-Ejecutar migraciones:
 
 ```bash
 docker compose exec api npx prisma migrate dev
-```
-
-Abrir Prisma Studio:
-
-```bash
-docker compose exec api npx prisma studio
+docker compose exec api npx prisma generate
 ```
 
 ## Tests y build
@@ -71,8 +60,14 @@ curl http://localhost:3000/health
 curl http://localhost:3000/health/db
 ```
 
-## Endpoints base
+## Comandos utiles
 
-- `GET /`
-- `GET /health`
-- `GET /health/db`
+```bash
+docker compose up --build
+docker compose exec api npx prisma migrate dev
+docker compose exec api npx prisma generate
+docker compose exec api npm test
+docker compose exec api npm run build
+curl http://localhost:3000/health
+curl http://localhost:3000/health/db
+```

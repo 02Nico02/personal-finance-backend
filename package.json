@@ -1,8 +1,8 @@
 {
-  "name": "app",
+  "name": "personal-finance-backend",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "Backend personal para finanzas, inversiones e importacion de datos desde Excel",
+  "author": "Nicolas Romero",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
