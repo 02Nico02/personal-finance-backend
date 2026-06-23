@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: finanzas
+      POSTGRES_USER: finanzas_user
+      POSTGRES_PASSWORD: finanzas_password
+    ports:
+      - '5435:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sh -c "npm run prisma:generate && npm run start:dev"
+    depends_on:
+      - db
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      POSTGRES_DB: finanzas
+      POSTGRES_USER: finanzas_user
+      POSTGRES_PASSWORD: finanzas_password
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      DATABASE_URL: postgresql://finanzas_user:finanzas_password@db:5432/finanzas?schema=public
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:
