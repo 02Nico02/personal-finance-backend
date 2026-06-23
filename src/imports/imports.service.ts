@@ -8,6 +8,8 @@ import { ImportExcelResponseDto } from './dto/import-excel-response.dto';
 
 const ALLOWED_EXTENSIONS = new Set(['.xlsx', '.xlsm', '.xls']);
 const DEFAULT_CHUNK_SIZE = 500;
+const TRANSACTION_TIMEOUT_MS = 120_000;
+const TRANSACTION_MAX_WAIT_MS = 10_000;
 
 @Injectable()
 export class ImportsService {
@@ -70,6 +72,9 @@ export class ImportsService {
             errors: []
           }
         });
+      }, {
+        maxWait: TRANSACTION_MAX_WAIT_MS,
+        timeout: TRANSACTION_TIMEOUT_MS
       });
 
       return {
