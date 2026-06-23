@@ -625,6 +625,11 @@ Cada fila importada deberia poder trazarse a:
 
 ## Decisiones implementadas en Prisma v1
 
+- `Instrument` se identifica de forma unica por `symbol + currency + instrumentType`.
+- `symbol` solo no alcanza porque una misma especie puede existir en distintos mercados, monedas o formas operativas.
+- `ImportedRow` se identifica por `importBatchId + sourceTable + sourceSheet + sourceRowId`.
+- `sourceSheet` se incluye para trazabilidad mas robusta del Excel.
+
 ### Entidades implementadas
 
 - `ImportBatch`

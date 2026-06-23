@@ -35,7 +35,7 @@ model ImportedRow {
   id              String   @id @default(uuid())
   importBatchId   String
   sourceTable     String
-  sourceSheet     String?
+  sourceSheet     String   @default("workbook")
   sourceRowId     String
   rawData         Json?
   normalizedData  Json?
@@ -57,16 +57,16 @@ model ImportedRow {
   pendingOrders   PendingOrder[]
   positions       CurrentPositionSnapshot[]
 
-  @@unique([importBatchId, sourceTable, sourceRowId])
-  @@index([importBatchId, sourceTable, sourceRowId])
+  @@unique([importBatchId, sourceTable, sourceSheet, sourceRowId])
+  @@index([importBatchId, sourceTable, sourceSheet, sourceRowId])
 }
 
 model Instrument {
   id              String   @id @default(uuid())
-  symbol          String   @unique
+  symbol          String
   name            String?
-  currency        String?
-  instrumentType  String?
+  currency        String   @default("UNKNOWN")
+  instrumentType  String   @default("UNKNOWN")
   isFci           Boolean  @default(false)
   active          Boolean  @default(true)
   importBatchId   String?
@@ -87,6 +87,7 @@ model Instrument {
   pendingOrders   PendingOrder[]
   positions       CurrentPositionSnapshot[]
 
+  @@unique([symbol, currency, instrumentType])
   @@index([symbol])
   @@index([importBatchId, sourceTable, sourceRowId])
 }
