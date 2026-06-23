@@ -60,6 +60,23 @@ curl http://localhost:3000/health
 curl http://localhost:3000/health/db
 ```
 
+## Importador Excel v1
+
+Esta primera version del importador solo guarda filas crudas y trazables en `ImportBatch` e `ImportedRow`.
+
+- Endpoint: `POST /imports/excel`
+- Formato: `multipart/form-data`
+- Campo: `file`
+
+Ejemplo:
+
+```bash
+curl -X POST http://localhost:3000/imports/excel \
+  -F "file=@./Historial Sueldo.xlsm"
+```
+
+Esta etapa no normaliza todavia a entidades de inversiones.
+
 ## Comandos utiles
 
 ```bash

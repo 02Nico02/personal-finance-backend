@@ -629,6 +629,7 @@ Cada fila importada deberia poder trazarse a:
 - `symbol` solo no alcanza porque una misma especie puede existir en distintos mercados, monedas o formas operativas.
 - `ImportedRow` se identifica por `importBatchId + sourceTable + sourceSheet + sourceRowId`.
 - `sourceSheet` se incluye para trazabilidad mas robusta del Excel.
+- El importador Excel v1 solo persiste filas crudas en `ImportBatch` e `ImportedRow`; la normalizacion a entidades de inversiones queda para etapas posteriores.
 
 ### Entidades implementadas
 
