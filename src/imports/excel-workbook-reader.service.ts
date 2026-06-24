@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { createHash } from 'crypto';
 import * as XLSX from 'xlsx';
+import { EXCEL_WORKBOOK_TABLE_MAP } from './excel/excel-workbook-map';
 
 export interface ImportedWorkbookRow {
   sourceSheet: string;
@@ -29,21 +30,12 @@ type TableHeuristic = {
   requiredHeaders: string[];
 };
 
-const KNOWN_TABLES: TableHeuristic[] = [
-  { name: 'Tabla6', requiredHeaders: ['ESPECIE', 'TOTAL', 'PREC. COMP.'] },
-  { name: 'Tabla13', requiredHeaders: ['ESPECIE', 'Fecha Vent.', 'VALORI. ACT.'] },
-  { name: 'TablaPosiciones', requiredHeaders: ['ESPECIE', 'TOTAL ACTUAL', 'RESULTADO %'] },
-  { name: 'Tabla5', requiredHeaders: ['ESPECIE', 'PRECIO'] },
-  { name: 'Tabla47', requiredHeaders: ['ESPECIE', 'SECTOR', 'REGION'] },
-  { name: 'Tabla11', requiredHeaders: ['Fondos com. Inv.'] },
-  { name: 'Tabla14', requiredHeaders: ['FECHA', 'BALANCE'] },
-  { name: 'Tabla35', requiredHeaders: ['FECHA', '% JUBILACIÓN', '% AHORRO'] },
-  { name: 'TablaMovimientosInversiones', requiredHeaders: ['Fecha', 'Especie', 'Tipo movimiento'] },
-  { name: 'Tabla_OrdenesPendientes', requiredHeaders: ['ESPECIE', 'Cant', 'PRECIO'] },
-  { name: 'TablaCalendario', requiredHeaders: ['Fecha', 'TNA', 'Rend_diaria', 'Indice'] },
-  { name: 'TablaCalendarioRem', requiredHeaders: ['Fecha', 'TNA', 'Rend_diaria', 'Indice'] },
-  { name: 'TablaCalendarioInf', requiredHeaders: ['Fecha', 'Mes', 'Rend_diaria_inf', 'Indice_inf'] }
-];
+const KNOWN_TABLES: TableHeuristic[] = Object.values(EXCEL_WORKBOOK_TABLE_MAP)
+  .flat()
+  .map((table) => ({
+    name: table.name,
+    requiredHeaders: table.requiredHeaders
+  }));
 
 @Injectable()
 export class ExcelWorkbookReaderService {

@@ -11,8 +11,8 @@ describe('ExcelWorkbookReaderService', () => {
   it('converts a workbook sheet into imported rows', () => {
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.aoa_to_sheet([
-      ['ID', 'Fecha', 'ESPECIE', 'MONEDA', 'CANT.', 'PREC. COMP.', 'TOTAL', 'PREC. ACT.', 'VALORI. ACT.'],
-      [1, '2026-06-23', 'MSFT', 'USD', 2, 100, 200, 110, 220],
+      ['ID', 'Fecha', 'ESPECIE', 'MONEDA', 'CANT.', 'PREC. COMP.', 'TOTAL', 'PREC. ACT.', 'VALORI. ACT.', 'VARIACION', 'TEM', 'TNA'],
+      [1, '2026-06-23', 'MSFT', 'USD', 2, 100, 200, 110, 220, 20, 0.1, 0.2],
     ]);
 
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Inversiones');

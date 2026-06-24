@@ -15,7 +15,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: sh -c "npm run prisma:generate && npm run start:dev"
+    command: sh -c "npm run prisma:generate && npx prisma migrate deploy && npm run start:dev"
     depends_on:
       - db
     environment:
