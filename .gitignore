@@ -6,6 +6,9 @@ coverage
 !.env.example
 docs/import-diagnostics/*.md
 docs/Historial Sueldo.xlsm
+data/*.xlsm
+data/*.xlsx
+data/*.xls
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
