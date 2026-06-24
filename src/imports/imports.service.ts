@@ -38,7 +38,9 @@ export class ImportsService {
     const checksum = this.calculateChecksum(file.buffer);
     const fileName = file.originalname.split(/[\\/]/).pop() ?? file.originalname;
 
-    const importBatch = await this.prisma.importBatch.create({
+    const prismaAny = this.prisma as any;
+
+    const importBatch = await prismaAny.importBatch.create({
       data: {
         fileName,
         originalFileName: file.originalname,
@@ -57,13 +59,14 @@ export class ImportsService {
       const rowChunks = this.chunk(allRows, DEFAULT_CHUNK_SIZE);
 
       await this.prisma.$transaction(async (tx) => {
+        const txAny = tx as any;
         for (const chunk of rowChunks) {
-          await tx.importedRow.createMany({
+          await txAny.importedRow.createMany({
             data: chunk.map((row) => this.mapRow(importBatch.id, row))
           });
         }
 
-        await tx.importBatch.update({
+        await txAny.importBatch.update({
           where: { id: importBatch.id },
           data: {
             status: 'imported',
@@ -104,7 +107,8 @@ export class ImportsService {
 
   private async markImportBatchFailed(importBatchId: string, errorMessage: string): Promise<void> {
     try {
-      await this.prisma.importBatch.update({
+      const prismaAny = this.prisma as any;
+      await prismaAny.importBatch.update({
         where: { id: importBatchId },
         data: {
           status: 'failed',
@@ -116,7 +120,7 @@ export class ImportsService {
     }
   }
 
-  private mapRow(importBatchId: string, row: ImportedWorkbookRow): Prisma.ImportedRowCreateManyInput {
+  private mapRow(importBatchId: string, row: ImportedWorkbookRow): Record<string, unknown> {
     return {
       importBatchId,
       sourceTable: row.sourceTable,

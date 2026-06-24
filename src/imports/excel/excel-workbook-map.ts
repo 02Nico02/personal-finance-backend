@@ -1,4 +1,4 @@
-export type ExcelWorkbookTableType = 'source' | 'snapshot' | 'benchmark' | 'auxiliary' | 'metric';
+﻿export type ExcelWorkbookTableType = 'source' | 'snapshot' | 'benchmark' | 'auxiliary' | 'metric';
 export type ExcelWorkbookTablePriority = 'high' | 'medium' | 'low';
 
 export type ExcelWorkbookTableDefinition = {
@@ -122,7 +122,7 @@ export const EXCEL_WORKBOOK_TABLE_MAP = {
       description: 'Benchmark inflacionario',
       type: 'benchmark',
       priority: 'medium',
-      requiredHeaders: ['Fecha', 'Mes', 'Inflacion mensual', 'Dias del mes', 'Rend_diaria_inf', 'Indice_inf']
+      requiredHeaders: ['Fecha', 'Mes', 'Inflacion mensual', 'Días del mes', 'Rend_diaria_inf', 'Indice_inf']
     }
   ],
   graficos: [
@@ -183,3 +183,4 @@ export function isOfficialTableForSheet(sheetName: string, tableName: string): b
 export function getNormalizationOrder(): string[] {
   return ['Tabla47', 'Tabla5', 'Tabla11', 'TablaPosiciones', 'Tabla_OrdenesPendientes', 'TablaCalendario', 'TablaCalendarioRem', 'TablaCalendarioInf', 'Tabla6', 'Tabla13', 'TablaMovimientosInversiones'];
 }
+

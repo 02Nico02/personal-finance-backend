@@ -8,6 +8,7 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "import:headers": "tsx scripts/generate-header-range-diagnostics.ts",
     "import:diagnostics": "tsx scripts/generate-import-diagnostics.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

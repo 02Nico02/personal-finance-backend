@@ -125,6 +125,20 @@ Ejemplo:
 docker compose exec api npm run import:diagnostics -- 0e3d913d-6135-4d17-aa2e-d50466ed61db
 ```
 
+## Diagnostico de cabeceras y rangos
+
+Para detectar posibles filas cabecera y rangos candidatos dentro de cada hoja:
+
+```bash
+docker compose exec api npm run import:headers -- <importBatchId>
+```
+
+Ejemplo:
+
+```bash
+docker compose exec api npm run import:headers -- cd03fce4-bb33-4816-9a5b-16b9fdd1844a
+```
+
 ## Comandos utiles
 
 ```bash

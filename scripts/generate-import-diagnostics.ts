@@ -16,10 +16,10 @@ import {
 type ImportBatchRecord = {
   id: string;
   fileName: string | null;
-  originalFileName: string | null;
+  originalFileName?: string | null;
   checksum: string | null;
   status: string;
-  detectedTables: unknown;
+  detectedTables?: unknown;
   createdAt: Date;
 };
 
@@ -41,7 +41,7 @@ async function main(): Promise<void> {
     throw new Error(`No se encontro un ImportBatch con id ${importBatchId}.`);
   }
 
-  const rows = await prisma.importedRow.findMany({
+  const rows = await (prisma as any).importedRow.findMany({
     where: { importBatchId },
     orderBy: [{ sourceSheet: 'asc' }, { sourceTable: 'asc' }, { createdAt: 'asc' }]
   });
@@ -49,7 +49,7 @@ async function main(): Promise<void> {
   const diagnostics = groupRowsByTable(rows as ImportedRowRecord[]);
   const comparisons = compareToOfficialMap(diagnostics);
   const recommendations = buildNormalizationRecommendation(diagnostics);
-  const markdown = buildMarkdown(batch as ImportBatchRecord, rows.length, diagnostics, comparisons, recommendations);
+  const markdown = buildMarkdown(batch as unknown as ImportBatchRecord, rows.length, diagnostics, comparisons, recommendations);
 
   mkdirSync(outputDir, { recursive: true });
   const outputPath = join(outputDir, `import-batch-${importBatchId}.md`);
