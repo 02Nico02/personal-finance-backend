@@ -1,4 +1,4 @@
-import { normalizeHeaderText, scoreRowAgainstTable } from './header-range-analysis';
+import { findHeaderRangeCandidates, getAllOfficialTableNames, getMissingOfficialTablesBySheet, normalizeHeaderText, scoreRowAgainstTable } from './header-range-analysis';
 
 describe('header-range-analysis', () => {
   it('suggests Tabla6 when headers appear in values', () => {
@@ -90,6 +90,18 @@ describe('header-range-analysis', () => {
     expect(candidate.confidence).toBe('alta');
   });
 
+  it('getAllOfficialTableNames returns real table names', () => {
+    const names = getAllOfficialTableNames();
+
+    expect(names).toContain('Tabla6');
+    expect(names).toContain('Tabla13');
+    expect(names).toContain('Tabla47');
+    expect(names).not.toContain('ID');
+    expect(names).not.toContain('Fecha');
+    expect(names).not.toContain('Compras');
+    expect(names).not.toContain('Ventas');
+  });
+
   it('keeps poor matches as discard', () => {
     const candidate = scoreRowAgainstTable(
       {
@@ -110,6 +122,39 @@ describe('header-range-analysis', () => {
 
     expect(candidate.score).toBe(0);
     expect(candidate.confidence).toBe('descartar');
+  });
+
+  it('ignores non official sheets when finding candidates', () => {
+    const candidates = findHeaderRangeCandidates([
+      {
+        id: '1',
+        importBatchId: 'batch',
+        sourceSheet: 'Compras',
+        sourceTable: 'Compras#1',
+        sourceRowId: '2',
+        rawData: {
+          col_1: 'ID',
+          col_2: 'Fecha',
+          col_3: 'ESPECIE',
+          col_4: 'MONEDA',
+          col_5: 'CANT.',
+          col_6: 'PREC. COMP.',
+          col_7: 'TOTAL',
+          col_8: 'PREC. ACT.',
+          col_9: 'VALORI. ACT.'
+        },
+        normalizedData: null
+      }
+    ]);
+
+    expect(candidates).toHaveLength(0);
+  });
+
+  it('lists missing official tables when none are detected', () => {
+    const missing = getMissingOfficialTablesBySheet([]);
+
+    expect(missing.some((item) => item.sheet === 'inversiones' && item.table === 'Tabla6')).toBe(true);
+    expect(missing.some((item) => item.sheet === 'Alertas' && item.table === 'Tabla47')).toBe(true);
   });
 
   it('normalizes accents and case', () => {

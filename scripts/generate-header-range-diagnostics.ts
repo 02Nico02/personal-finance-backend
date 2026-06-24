@@ -8,6 +8,7 @@ import {
   getMissingOfficialTablesBySheet,
   type HeaderRangeRow
 } from '../src/imports/excel/header-range-analysis';
+import { getOfficialSheetNames } from '../src/imports/excel/excel-workbook-map';
 
 type ImportBatchRecord = {
   id: string;
@@ -41,10 +42,12 @@ async function main(): Promise<void> {
   });
 
   const groupedBySheet = groupRowsBySheet(rows as HeaderRangeRow[]);
-  const allCandidates = groupedBySheet.flatMap((group) => findHeaderRangeCandidates(group.rows));
+  const ignoredSheets = groupedBySheet.filter((group) => !getOfficialSheetNames().includes(group.sheet));
+  const officialGroups = groupedBySheet.filter((group) => getOfficialSheetNames().includes(group.sheet));
+  const allCandidates = officialGroups.flatMap((group) => findHeaderRangeCandidates(group.rows));
   const rangeSuggestions = buildRangeSuggestions(allCandidates);
   const missingOfficialTables = getMissingOfficialTablesBySheet(allCandidates);
-  const markdown = buildMarkdown(batch as unknown as ImportBatchRecord, rows.length, groupedBySheet, allCandidates, rangeSuggestions, missingOfficialTables);
+  const markdown = buildMarkdown(batch as unknown as ImportBatchRecord, rows.length, officialGroups, ignoredSheets, allCandidates, rangeSuggestions, missingOfficialTables);
 
   mkdirSync(outputDir, { recursive: true });
   const outputPath = join(outputDir, `import-batch-${importBatchId}-headers.md`);
@@ -73,6 +76,7 @@ function buildMarkdown(
   batch: ImportBatchRecord,
   rowsImported: number,
   groupedBySheet: Array<{ sheet: string; rows: HeaderRangeRow[] }>,
+  ignoredSheets: Array<{ sheet: string; rows: HeaderRangeRow[] }>,
   candidates: ReturnType<typeof findHeaderRangeCandidates>,
   rangeSuggestions: ReturnType<typeof buildRangeSuggestions>,
   missingOfficialTables: ReturnType<typeof getMissingOfficialTablesBySheet>
@@ -173,6 +177,7 @@ function buildMarkdown(
     `- Candidatos alta confianza: ${confidenceCounts.alta}`,
     `- Candidatos media confianza: ${confidenceCounts.media}`,
     `- Hojas con tablas pendientes: ${[...new Set(missingOfficialTables.map((item) => item.sheet))].join(', ') || 'ninguna'}`,
+    `- Hojas fuera del mapa: ${ignoredSheets.length ? ignoredSheets.map((group) => group.sheet).join(', ') : 'ninguna'}`,
     '',
     '## Candidatos por hoja',
     '',

@@ -1,5 +1,5 @@
-﻿import type { Prisma } from '@prisma/client';
-import { getOfficialTableDefinition, getOfficialTablesForSheet, isOfficialSheet, isOfficialTableForSheet } from './excel-workbook-map';
+import type { Prisma } from '@prisma/client';
+import { getOfficialSheetNames, getOfficialTableDefinition, getOfficialTablesForSheet, isOfficialSheet, isOfficialTableForSheet } from './excel-workbook-map';
 
 export type HeaderRangeRow = {
   id: string;
@@ -52,20 +52,15 @@ export const EXTRA_EXPECTED_HEADERS: Record<string, string[]> = {
   Tabla9: ['MES', 'TOTAL DEL MES', 'ACUMULADO', 'Val. Inicio', 'VARIACION %', 'REND. REAL'],
   Tabla5: ['ID', 'MES', 'FECHA', 'ESPECIE', 'PRECIO'],
   Tabla14: ['FECHA', 'MES', 'BALANCE'],
-  Tabla60: ['Año', 'Val Inicio', 'Compras', 'Ventas', 'Val Fin', 'Resultado', 'Rend. %', 'Inflacion', 'Rend. Real', 'Ratio Aporte'],
-  HistorialMensualReconstruido: ['MES', 'ValInicio', 'Compras', 'Ventas', 'ValFin', 'Resultado', 'VARIACION %', 'Inflacion %', 'Rend. Real %', 'Ratio Aporte', 'Tipo de Mes', 'Año'],
+  Tabla60: ['Año', 'Ano', 'Val Inicio', 'Compras', 'Ventas', 'Val Fin', 'Resultado', 'Rend. %', 'Inflacion', 'Rend. Real', 'Ratio Aporte'],
+  HistorialMensualReconstruido: ['MES', 'ValInicio', 'Compras', 'Ventas', 'ValFin', 'Resultado', 'VARIACION %', 'Inflacion %', 'Rend. Real %', 'Ratio Aporte', 'Tipo de Mes', 'Año', 'Ano'],
   Tabla47: ['ESPECIE', 'TIPO', 'SECTOR', 'SUBSECTOR', 'REGION', 'VALORI. ACT.', 'Monto', 'Esperado'],
   TablaCalendario: ['Fecha', 'TNA', 'Rend_diaria', 'Indice'],
   TablaCalendarioRem: ['Fecha', 'TNA', 'Rend_diaria', 'Indice'],
-  TablaCalendarioInf: ['Fecha', 'Inflación mensual', 'Días del mes', 'Rend_diaria_inf', 'Indice_inf'],
+  TablaCalendarioInf: ['Fecha', 'Inflación mensual', 'Inflacion mensual', 'Días del mes', 'Dias del mes', 'Rend_diaria_inf', 'Indice_inf'],
   Tabla35: ['FECHA', 'VALOR AR', 'VALOR USD', '% JUBILACION', '% AHORRO', 'MONTO JUB. AR', 'MONTO JUB. USD', 'MONTO AHOR. AR', 'MONTO AHOR. USD'],
   Tabla38: ['Plataforma', 'Monto', 'moneda'],
-  Tabla39: ['CUATRIMESTRE', 'AÑO', 'INGRESO', 'EGRESO', 'BALANCE']
-};
-
-type TableDefinition = {
-  name: string;
-  requiredHeaders: string[];
+  Tabla39: ['CUATRIMESTRE', 'AÑO', 'Ano', 'INGRESO', 'EGRESO', 'BALANCE']
 };
 
 export function normalizeHeaderText(value: string): string {
@@ -95,15 +90,13 @@ export function scoreRowAgainstTable(row: HeaderRangeRow, tableName: string): He
   const keyPool = Object.keys(rawObject).map(normalizeHeaderText);
   const valuePool = collectValueTokens(rawObject);
   const rowText = normalizeHeaderText(JSON.stringify(rawObject));
-  const sourceTableHint = matchesTableHint(row.sourceTable, tableName);
 
   const matchedFromKeys = expectedHeaders.filter((header) => matchesTokenInPool(header, keyPool) || rowText.includes(normalizeHeaderText(header)));
   const matchedFromValues = expectedHeaders.filter((header) => matchesTokenInPool(header, valuePool) || rowText.includes(normalizeHeaderText(header)));
   const matched = uniqueHeaders([...matchedFromKeys, ...matchedFromValues]);
-  const rawScore = expectedHeaders.length ? matched.length / expectedHeaders.length : 0;
-  const score = rawScore < 0.25 && sourceTableHint ? 0.26 : rawScore;
+  const score = expectedHeaders.length ? matched.length / expectedHeaders.length : 0;
   const missing = expectedHeaders.filter((header) => !matched.includes(header));
-
+  const confidence = matched.length > 0 ? scoreToConfidence(score) : 'descartar';
   const rowNumber = parseRowNumber(row.sourceRowId);
 
   return {
@@ -112,7 +105,7 @@ export function scoreRowAgainstTable(row: HeaderRangeRow, tableName: string): He
     rowNumber,
     tableLogic: tableName,
     score: roundScore(score),
-    confidence: scoreToConfidence(score),
+    confidence,
     matchedFromKeys,
     matchedFromValues,
     headersFound: matched,
@@ -121,7 +114,7 @@ export function scoreRowAgainstTable(row: HeaderRangeRow, tableName: string): He
     probableEndRow: null,
     sampleRowsAfterHeader: [],
     rawRow: rawObject,
-    comment: buildComment(tableName, score, matched, missing, matchedFromKeys, matchedFromValues, sourceTableHint),
+    comment: buildComment(tableName, score, matched, missing, matchedFromKeys, matchedFromValues),
     officialSheet: isOfficialSheet(row.sourceSheet),
     inOfficialMap: isOfficialTableForSheet(row.sourceSheet, tableName)
   };
@@ -132,9 +125,13 @@ export function findHeaderRangeCandidates(rows: HeaderRangeRow[]): HeaderRangeCa
   const candidates: HeaderRangeCandidate[] = [];
 
   for (const row of sortedRows) {
-    for (const table of getAllOfficialTableNames()) {
-      const candidate = scoreRowAgainstTable(row, table);
-      if (candidate.score >= 0.2) {
+    if (!isOfficialSheet(row.sourceSheet)) {
+      continue;
+    }
+
+    for (const table of getOfficialTablesForSheet(row.sourceSheet)) {
+      const candidate = scoreRowAgainstTable(row, table.name);
+      if (candidate.confidence !== 'descartar' && candidate.score >= 0.25) {
         candidates.push(candidate);
       }
     }
@@ -147,18 +144,6 @@ export function findHeaderRangeCandidates(rows: HeaderRangeRow[]): HeaderRangeCa
     candidatesByTable.set(candidate.tableLogic, list);
   }
 
-  const byRowNumber = new Map<number, HeaderRangeCandidate[]>();
-  for (const candidate of candidates) {
-    const list = byRowNumber.get(candidate.rowNumber) ?? [];
-    list.push(candidate);
-    byRowNumber.set(candidate.rowNumber, list);
-  }
-
-  const rowsByNumber = new Map<number, HeaderRangeRow>();
-  for (const row of sortedRows) {
-    rowsByNumber.set(parseRowNumber(row.sourceRowId), row);
-  }
-
   const topCandidates: HeaderRangeCandidate[] = [];
   for (const [tableLogic, list] of candidatesByTable.entries()) {
     const topPerTable = [...list].sort((a, b) => b.score - a.score || a.rowNumber - b.rowNumber).slice(0, 5);
@@ -166,7 +151,7 @@ export function findHeaderRangeCandidates(rows: HeaderRangeRow[]): HeaderRangeCa
       const nextCandidate = candidates
         .filter((other) => other.rowNumber > candidate.rowNumber)
         .sort((a, b) => a.rowNumber - b.rowNumber)[0];
-      const probableEndRow = nextCandidate ? nextCandidate.rowNumber - 1 : sortedRows[sortedRows.length - 1]?.sourceRowId ? parseRowNumber(sortedRows[sortedRows.length - 1].sourceRowId) : null;
+      const probableEndRow = nextCandidate ? nextCandidate.rowNumber - 1 : sortedRows.length ? parseRowNumber(sortedRows[sortedRows.length - 1].sourceRowId) : null;
       const sampleRowsAfterHeader = sortedRows
         .filter((row) => parseRowNumber(row.sourceRowId) > candidate.rowNumber)
         .slice(0, 3)
@@ -211,7 +196,7 @@ export function getMissingOfficialTablesBySheet(candidates: HeaderRangeCandidate
   }
 
   const missing: Array<{ sheet: string; table: string; reason: string }> = [];
-  for (const sheet of Object.keys(EXTRA_EXPECTED_HEADERS).filter((name) => isOfficialSheet(name))) {
+  for (const sheet of getOfficialSheetNames()) {
     const detected = detectedBySheet.get(sheet) ?? new Set<string>();
     for (const table of getOfficialTablesForSheet(sheet)) {
       if (!detected.has(table.name)) {
@@ -225,6 +210,10 @@ export function getMissingOfficialTablesBySheet(candidates: HeaderRangeCandidate
   }
 
   return missing;
+}
+
+export function getAllOfficialTableNames(): string[] {
+  return getOfficialSheetNames().flatMap((sheet) => getOfficialTablesForSheet(sheet).map((table) => table.name));
 }
 
 function collectValueTokens(rawObject: Record<string, unknown>): string[] {
@@ -263,12 +252,6 @@ function matchesTokenInPool(expectedHeader: string, pool: string[]): boolean {
   return pool.some((token) => token === normalizedExpected || token.includes(normalizedExpected) || normalizedExpected.includes(token));
 }
 
-function matchesTableHint(sourceTable: string, tableName: string): boolean {
-  const normalizedSource = normalizeHeaderText(sourceTable);
-  const normalizedTable = normalizeHeaderText(tableName);
-  return normalizedSource === normalizedTable || normalizedSource.includes(normalizedTable) || normalizedTable.includes(normalizedSource);
-}
-
 function scoreToConfidence(score: number): 'alta' | 'media' | 'baja' | 'descartar' {
   if (score >= 0.7) {
     return 'alta';
@@ -288,27 +271,16 @@ function buildComment(
   matched: string[],
   missing: string[],
   matchedFromKeys: string[],
-  matchedFromValues: string[],
-  sourceTableHint = false
+  matchedFromValues: string[]
 ): string {
   const source = matchedFromValues.length ? 'values' : 'keys';
-  const hint = sourceTableHint ? ' sourceTable coincide con la tabla.' : '';
-  return `${tableName}: score ${Math.round(score * 100)}% usando ${source}.${hint} Encontrados: ${matched.join(', ') || 'ninguno'}. Faltan: ${missing.join(', ') || 'ninguno'}.`;
+  const keyNote = matchedFromKeys.length ? ` Keys: ${matchedFromKeys.join(', ')}.` : '';
+  return `${tableName}: score ${Math.round(score * 100)}% usando ${source}.${keyNote} Encontrados: ${matched.join(', ') || 'ninguno'}. Faltan: ${missing.join(', ') || 'ninguno'}.`;
 }
 
 function parseRowNumber(sourceRowId: string): number {
   const parsed = Number.parseInt(sourceRowId, 10);
   return Number.isFinite(parsed) ? parsed : Number.MAX_SAFE_INTEGER;
-}
-
-function getAllOfficialTableNames(): string[] {
-  const names = new Set<string>();
-  for (const tableList of Object.values(EXTRA_EXPECTED_HEADERS)) {
-    for (const table of tableList) {
-      names.add(table);
-    }
-  }
-  return Array.from(names);
 }
 
 function isPlainObject(value: Prisma.JsonValue | null): value is Prisma.JsonObject {
@@ -318,4 +290,3 @@ function isPlainObject(value: Prisma.JsonValue | null): value is Prisma.JsonObje
 function roundScore(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
-

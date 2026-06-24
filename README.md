@@ -139,6 +139,16 @@ Ejemplo:
 docker compose exec api npm run import:headers -- cd03fce4-bb33-4816-9a5b-16b9fdd1844a
 ```
 
+## Scanner crudo del workbook
+
+Para analizar el Excel original como matriz cruda y detectar cabeceras reales dentro de cada hoja:
+
+```bash
+docker compose exec api npm run excel:scan-headers -- ./docs/Historial\ Sueldo.xlsm
+```
+
+El archivo debe existir dentro del contenedor. Si preferís, podés copiarlo a `./data/` y usar esa ruta.
+
 ## Comandos utiles
 
 ```bash
@@ -150,6 +160,8 @@ docker compose exec api npx prisma migrate dev
 docker compose exec api npx prisma generate
 docker compose exec api npx prisma studio
 docker compose exec api npm run import:diagnostics -- <importBatchId>
+docker compose exec api npm run import:headers -- <importBatchId>
+docker compose exec api npm run excel:scan-headers -- ./docs/Historial\ Sueldo.xlsm
 docker compose exec api npm test
 docker compose exec api npm run build
 curl http://localhost:3000/health

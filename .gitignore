@@ -4,6 +4,8 @@ coverage
 .env
 .env.*
 !.env.example
+docs/import-diagnostics/*.md
+docs/Historial Sueldo.xlsm
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
